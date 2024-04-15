@@ -9,37 +9,19 @@ import (
 	"github.com/go-kid/ioc/factory"
 	"github.com/go-kid/ioc/factory/processors"
 	"github.com/go-kid/ioc/syslog"
-	"github.com/go-kid/ioc/util/el"
 	"github.com/go-kid/ioc/util/mode"
 	"github.com/go-kid/ioc/util/properties"
 	"github.com/go-kid/ioc/util/reflectx"
 	"gopkg.in/yaml.v3"
 	"reflect"
-	"strings"
-)
-
-type ConfigExporter interface {
-	GetConfig(mode mode.Mode) properties.Properties
-	GetConfigWraps() []*ConfigWrap
-}
-
-const (
-	Append                   = mode.M1
-	OnlyNew                  = mode.M2
-	AnnotationSource         = mode.M3
-	AnnotationSourceProperty = mode.M4
-	AnnotationArgs           = mode.M5
 )
 
 type postProcessor struct {
 	processors.DefaultInstantiationAwareComponentPostProcessor
 	definition.PriorityComponent
-	configure  configure.Configure
-	quoteEl    el.Helper
-	exprEl     el.Helper
-	wraps      []*ConfigWrap
-	properties []*component_definition.Property
-	//propertyOriginArgs map[string]component_definition.TagArg
+	configure          configure.Configure
+	properties         []*component_definition.Property
+	propertyOriginArgs map[string]component_definition.TagArg
 }
 
 func (d *postProcessor) PostProcessComponentFactory(factory factory.Factory) error {
@@ -49,9 +31,7 @@ func (d *postProcessor) PostProcessComponentFactory(factory factory.Factory) err
 
 func NewConfigExporter() ConfigExporter {
 	return &postProcessor{
-		quoteEl: el.NewQuote(),
-		exprEl:  el.NewExpr(),
-		//propertyOriginArgs: make(map[string]component_definition.TagArg),
+		propertyOriginArgs: make(map[string]component_definition.TagArg),
 	}
 }
 
@@ -59,32 +39,24 @@ func (d *postProcessor) Order() int {
 	return -1
 }
 
-type ConfigWrap struct {
-	ComponentName string
-	Property      *component_definition.Property
-	Prefix        string
-	RealValue     any
+func copyArg(arg component_definition.TagArg) component_definition.TagArg {
+	copied := component_definition.TagArg{}
+	for argType, strings := range arg {
+		copied[argType] = strings
+	}
+	return copied
 }
-
-const (
-	modifiedTag = "@modified="
-)
 
 func (d *postProcessor) PostProcessBeforeInstantiation(m *component_definition.Meta, componentName string) (any, error) {
 	if _, ok := m.Raw.(*app.App); ok {
 		return m.Raw, nil
 	}
 	for _, prop := range m.GetAllProperties() {
-		//copyArg, ok := d.propertyOriginArgs[prop.ID()]
-		//if !ok {
-		//	copyArg = component_definition.TagArg{}
-		//	d.propertyOriginArgs[prop.ID()] = copyArg
-		//}
-		//for argType, vals := range prop.Args() {
-		//	copyArg[argType] = vals
-		//}
-		prop.SetArg(component_definition.ArgRequired, []string{modifiedTag + "true"})
-		d.properties = append(d.properties, prop)
+		if prop.PropertyType == component_definition.PropertyTypeConfiguration {
+			d.propertyOriginArgs[prop.Field.ID()+prop.Tag] = copyArg(prop.Args())
+			d.properties = append(d.properties, prop)
+		}
+		prop.SetArg(component_definition.ArgRequired, "false")
 	}
 	return nil, nil
 }
@@ -93,86 +65,87 @@ func (d *postProcessor) PostProcessBeforeInitialization(component any, component
 	return nil, nil
 }
 
-func (d *postProcessor) GetConfigWraps() []*ConfigWrap {
-	return d.wraps
-}
-
-func holderName(s *component_definition.Holder) string {
-	if s.IsEmbed {
-		return fmt.Sprintf("%s.Embed(%s)", holderName(s.Holder), s.Type.Name())
-	}
-	return s.Meta.Name()
-}
-
-func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
-	pm := properties.New()
+func (d *postProcessor) ForEachConfiguration(f func(property *component_definition.Property, prefix string, val any)) {
 	for _, property := range d.properties {
 		for p, a := range property.Configurations {
 			prefix := p
 			value := a
-			if value == nil {
-				value = reflectx.ZeroValue(property.Type)
+			tagArg := d.propertyOriginArgs[property.Field.ID()+property.Tag]
+			for argType, strings := range tagArg {
+				property.SetArg(argType, strings...)
 			}
-
-			if mode.Eq(AnnotationArgs) {
-				tagArg := property.Args()
-				tagArg.ForEach(func(argType component_definition.ArgType, args []string) {
-					var trimArgs []string
-					for _, arg := range args {
-						if strings.HasPrefix(arg, modifiedTag) {
-							arg = arg[len(modifiedTag):]
-						}
-						trimArgs = append(trimArgs, arg)
-					}
-					property.SetArg(argType, trimArgs)
-				})
-				//tagArg := d.propertyOriginArgs[property.ID()]
-				//for argType, vals := range d.propertyOriginArgs[property.ID()] {
-				//	if _, ok := tagArg[argType]; ok {
-				//		tagArg[argType] = vals
-				//	}
-				//}
-				//tagArg := property.Args()
-				tagArg.ForEach(func(argType component_definition.ArgType, args []string) {
-					pm.Set(fmt.Sprintf("%s@Args.%s", prefix, argType), args)
-				})
-			}
-
-			if mode.Eq(AnnotationSource | AnnotationSourceProperty) {
-				source := holderName(property.Holder)
-				if mode.Eq(AnnotationSourceProperty) {
-					source = fmt.Sprintf("%s.Field(%s).Tag(%s:'%s').Type(%s)", source, property.StructField.Name, property.Tag, property.TagVal, property.PropertyType)
-				}
-				annoPath := fmt.Sprintf("%s@Sources", prefix)
-				if sources, ok := pm.Get(annoPath); ok {
-					pm.Set(annoPath, append(sources.([]string), source))
-				} else {
-					pm.Set(annoPath, []string{source})
-				}
-			}
-
-			if origin := d.configure.Get(prefix); origin != nil {
-				if mode.Eq(OnlyNew) {
-					continue
-				}
-				if mode.Eq(Append) {
-					value = origin
-				}
-			}
-
-			switch property.Type.Kind() {
-			case reflect.Pointer, reflect.Struct, reflect.Map:
-				subRaw := toMap(value)
-				subProp := properties.NewFromMap(subRaw)
-				for subP, subAnyVal := range subProp {
-					pm.Set(prefix+"."+subP, subAnyVal)
-				}
-			default:
-				pm.Set(prefix, value)
-			}
+			f(property, prefix, value)
 		}
 	}
+}
+
+func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
+	pm := properties.New()
+	d.ForEachConfiguration(func(property *component_definition.Property, prefix string, value any) {
+		if value == nil {
+			value = reflectx.ZeroValue(property.Type)
+		}
+
+		if mode.Eq(AnnotationArgs) {
+			property.Args().ForEach(func(argType component_definition.ArgType, args []string) {
+				if len(args) == 0 || (len(args) == 1 && args[0] == "") {
+					pm.Set(fmt.Sprintf("%s@Args.%s", prefix, argType), true)
+				} else {
+					pm.Set(fmt.Sprintf("%s@Args.%s", prefix, argType), args)
+				}
+			})
+		}
+
+		if mode.Eq(AnnotationSource | AnnotationSourceProperty) {
+			var source string
+			if mode.Eq(AnnotationSourceProperty) {
+				source = property.String()
+			} else {
+				source = property.Holder.String()
+			}
+			annoPath := fmt.Sprintf("%s@Sources", prefix)
+			if sources, ok := pm.Get(annoPath); ok {
+				pm.Set(annoPath, append(sources.([]string), source))
+			} else {
+				pm.Set(annoPath, []string{source})
+			}
+		}
+
+		if origin := d.configure.Get(prefix); origin != nil {
+			if mode.Eq(OnlyNew) {
+				return
+			}
+			if mode.Eq(Append) {
+				value = origin
+			}
+		}
+
+		setProperties(property, pm, prefix, value)
+	})
 	return pm
+}
+
+func setProperties(property *component_definition.Property, pm properties.Properties, prefix string, value any) {
+	switch property.Type.Kind() {
+	case reflect.Struct, reflect.Map:
+		deepSet(prefix, value, pm)
+	case reflect.Pointer:
+		if eleKind := property.Type.Elem().Kind(); eleKind == reflect.Struct || eleKind == reflect.Map {
+			deepSet(prefix, value, pm)
+			return
+		}
+		fallthrough
+	default:
+		pm.Set(prefix, value)
+	}
+}
+
+func deepSet(prefix string, value any, pm properties.Properties) {
+	subRaw := toMap(value)
+	subProp := properties.NewFromMap(subRaw)
+	for subP, subAnyVal := range subProp {
+		pm.Set(prefix+"."+subP, subAnyVal)
+	}
 }
 
 func toMap(a any) map[string]any {

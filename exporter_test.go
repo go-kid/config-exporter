@@ -1,7 +1,6 @@
 package config_exporter
 
 import (
-	"fmt"
 	"github.com/go-kid/ioc"
 	"github.com/go-kid/ioc/app"
 	"github.com/go-kid/ioc/configure/loader"
@@ -41,19 +40,19 @@ func (c *MergeConfig) Prefix() string {
 }
 
 type MergeParent struct {
-	S2     string            `prop:"Merge.s2"`
+	S2     string            `prop:"Merge.s2:s2"`
 	B2     bool              `prop:"Merge.b2"`
-	M2     map[string]string `prop:"Merge.m2"`
-	Slice2 []int64           `prop:"Merge.slice2"`
+	M2     map[string]string `prop:"Merge.m2:map[foo:bar]"`
+	Slice2 []int64           `prop:"Merge.slice2:[1,2,3]"`
 	Sub2   SubConfig         `prop:"Merge.sub2"`
-	SubP2  *SubConfig        `prop:"Merge.subP2"`
+	SubP2  *SubConfig        `prop:"Merge.subP2:map[sub:sub]"`
 }
 
 type A struct {
 	MergeParent
 	ConfigA     string   `prop:"app.configA"`
-	ConfigB     string   `prop:"${app.configB:config}"`
-	ConfigSlice []string `value:"${app.configSlice:[a,b]}"`
+	ConfigB     string   `prop:"app.configB:b,validate=eq=b"`
+	ConfigSlice []string `value:"${app.configSlice:[a,b]},validate=min=1 max=10 required"`
 	ValueA      string   `value:"abc"`
 	ValueB      string   `value:"${app.valueB:abc}"`
 	ValueC      string   `value:"#{'a'+'b'}"`
@@ -96,13 +95,15 @@ Merge:
     m:
         string: 0
     m2:
-        string: string
+        foo: bar
     s: string
-    s2: string
+    s2: s2
     slice:
         - 0
     slice2:
-        - 0
+        - 1
+        - 2
+        - 3
     sub:
         sub: string
     sub2:
@@ -110,15 +111,14 @@ Merge:
     subP:
         sub: string
     subP2:
-        sub: string
+        sub: sub
 app:
     configA: string
-    configB: config
+    configB: b
     configSlice:
         - a
         - b
     valueB: abc
-config: string
 `)
 
 func TestConfigExporter(t *testing.T) {
@@ -126,7 +126,7 @@ func TestConfigExporter(t *testing.T) {
 		a := &A{}
 		exporter := NewConfigExporter()
 		_, err := ioc.Run(
-			app.LogTrace,
+			app.LogError,
 			app.SetComponents(a, exporter),
 		)
 		assert.NoError(t, err)
@@ -152,7 +152,7 @@ Demo:
         select: 1
 app:
     configA: cfgA
-    configB: cfgB
+    configB: b
     configSlice:
         - a
         - b
@@ -161,7 +161,7 @@ app:
 		a := &A{}
 		exporter := NewConfigExporter()
 		_, err := ioc.Run(
-			app.LogWarn,
+			app.LogError,
 			app.AddConfigLoader(loader.NewRawLoader(cfg)),
 			app.SetComponents(a, exporter),
 		)
@@ -187,13 +187,15 @@ Merge:
     m:
         string: 0
     m2:
-        string: string
+        foo: bar
     s: string
-    s2: string
+    s2: s2
     slice:
         - 0
     slice2:
-        - 0
+        - 1
+        - 2
+        - 3
     sub:
         sub: string
     sub2:
@@ -201,15 +203,14 @@ Merge:
     subP:
         sub: string
     subP2:
-        sub: string
+        sub: sub
 app:
     configA: cfgA
-    configB: cfgB
+    configB: b
     configSlice:
         - a
         - b
     valueB: abc
-cfgB: string
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes))
 	})
@@ -244,7 +245,7 @@ config: "hello"
 		a := &A{}
 		exporter := NewConfigExporter()
 		_, err := ioc.Run(
-			app.LogWarn,
+			app.LogError,
 			app.AddConfigLoader(loader.NewRawLoader(cfg)),
 			app.SetComponents(a, exporter),
 		)
@@ -255,17 +256,19 @@ config: "hello"
 		var exampleConfig = []byte(`Merge:
     b2: false
     m2:
-        string: string
-    s2: string
+        foo: bar
+    s2: s2
     slice2:
-        - 0
+        - 1
+        - 2
+        - 3
     sub2:
         sub: string
     subP2:
-        sub: string
+        sub: sub
 app:
     configA: string
-    configB: config
+    configB: b
     configSlice:
         - a
         - b
@@ -280,7 +283,7 @@ app:
 		}
 		exporter := NewConfigExporter()
 		_, err := ioc.Run(
-			app.LogWarn,
+			app.LogError,
 			app.SetComponents(&A{}, &A2{}, exporter),
 			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
 		)
@@ -316,50 +319,61 @@ app:
         - github.com/go-kid/config-exporter/A
     valueB@Sources:
         - github.com/go-kid/config-exporter/A
-config@Sources:
-    - github.com/go-kid/config-exporter/A
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes))
+	})
+	t.Run("AnnotationSourcePropertyMode", func(t *testing.T) {
+		type A2 struct {
+			Config      *Config
+			MergeConfig *MergeConfig
+		}
+		exporter := NewConfigExporter()
+		_, err := ioc.Run(
+			app.LogError,
+			app.SetComponents(&A{}, &A2{}, exporter),
+			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
+		)
+		assert.NoError(t, err)
+		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew).Expand())
+		assert.NoError(t, err)
 
 		bytes, err = yaml.Marshal(exporter.GetConfig(AnnotationSourceProperty | OnlyNew).Expand())
 		assert.NoError(t, err)
-		exampleConfig = []byte(`Demo@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Config).Tag(prop:'Demo').Type(configuration)
-    - github.com/go-kid/config-exporter/A2.Field(Config).Tag(prop:'Demo').Type(configuration)
+		exampleConfig := []byte(`Demo@Sources:
+    - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').Required()
+    - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').Required()
 Merge:
     b2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Tag(prop:'Merge.b2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'false').Required()
     m2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Tag(prop:'Merge.m2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'{"foo":"bar"}').Required()
     s2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Tag(prop:'Merge.s2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'s2').Required()
     slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Tag(prop:'Merge.slice2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'[1,2,3]').Required()
     sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Tag(prop:'Merge.sub2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'{"sub":"string"}').Required()
     subP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Tag(prop:'Merge.subP2').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'{"sub":"sub"}').Required()
 Merge@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Merge).Tag(prop:'Merge').Type(configuration)
-    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Tag(prop:'Merge').Type(configuration)
+    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').Required()
+    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').Required()
 app:
     configA@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigA).Tag(prop:'app.configA').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'string').Required()
     configB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigB).Tag(prop:'config').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Field(ConfigB).Type(Configuration).Tag(value:'b').Required().Validate(eq=b)
     configSlice@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigSlice).Tag(value:'["a","b"]').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Field(ConfigSlice).Type(Configuration).Tag(value:'["a","b"]').Required().Validate(min=1,max=10,required)
     valueB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ValueB).Tag(value:'abc').Type(configuration)
-config@Sources:
-    - github.com/go-kid/config-exporter/A.Field(ConfigB).Tag(prop:'config').Type(configuration)
+        - github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'abc').Required()
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes))
 	})
 	t.Run("AnnotationArgsMode", func(t *testing.T) {
 		exporter := NewConfigExporter()
 		_, err := ioc.Run(
-			app.LogWarn,
+			app.LogError,
 			app.SetComponents(&A{}, exporter),
 			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
 		)
@@ -367,48 +381,38 @@ config@Sources:
 		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationArgs | OnlyNew).Expand())
 		assert.NoError(t, err)
 		var exampleConfig = []byte(`Demo@Args:
-    required:
-        - "true"
+    Required: true
 Merge:
     b2@Args:
-        required:
-            - "true"
+        Required: true
     m2@Args:
-        required:
-            - "true"
+        Required: true
     s2@Args:
-        required:
-            - "true"
+        Required: true
     slice2@Args:
-        required:
-            - "true"
+        Required: true
     sub2@Args:
-        required:
-            - "true"
+        Required: true
     subP2@Args:
-        required:
-            - "true"
+        Required: true
 Merge@Args:
-    required:
-        - "true"
+    Required: true
 app:
     configA@Args:
-        required:
-            - "true"
+        Required: true
     configB@Args:
-        required:
-            - "true"
+        Required: true
+        Validate:
+            - eq=b
     configSlice@Args:
-        required:
-            - "true"
+        Required: true
+        Validate:
+            - min=1
+            - max=10
+            - required
     valueB@Args:
-        required:
-            - "true"
-config@Args:
-    required:
-        - "true"
+        Required: true
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes))
-		fmt.Println(string(bytes))
 	})
 }

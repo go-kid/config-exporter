@@ -3,7 +3,7 @@ module github.com/go-kid/config-exporter
 go 1.22.1
 
 require (
-	github.com/go-kid/ioc v1.5.10
+	github.com/go-kid/ioc v1.5.15
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 )
