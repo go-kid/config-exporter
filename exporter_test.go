@@ -340,33 +340,33 @@ app:
 		bytes, err = yaml.Marshal(exporter.GetConfig(AnnotationSourceProperty | OnlyNew).Expand())
 		assert.NoError(t, err)
 		exampleConfig := []byte(`Demo@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').Required()
-    - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').Required()
+    - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
 Merge:
     b2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'false').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.b2}').TagActualValue(false).Required()
     m2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'{"foo":"bar"}').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.m2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
     s2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'s2').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'${Merge.s2:s2}').TagActualValue(s2).Required()
     slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'[1,2,3]').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'${Merge.slice2:[1,2,3]}').TagActualValue([1,2,3]).Required()
     sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'{"sub":"string"}').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'${Merge.sub2}').TagActualValue({"sub":"string"}).Required()
     subP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'{"sub":"sub"}').Required()
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.subP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
 Merge@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').Required()
-    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').Required()
+    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Required()
+    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Required()
 app:
     configA@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'string').Required()
+        - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'${app.configA}').TagActualValue(string).Required()
     configB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigB).Type(Configuration).Tag(value:'b').Required().Validate(eq=b)
+        - github.com/go-kid/config-exporter/A.Field(ConfigB).Type(Configuration).Tag(value:'${app.configB:b}').TagActualValue(b).Required().Validate(eq=b)
     configSlice@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigSlice).Type(Configuration).Tag(value:'["a","b"]').Required().Validate(min=1,max=10,required)
+        - github.com/go-kid/config-exporter/A.Field(ConfigSlice).Type(Configuration).Tag(value:'${app.configSlice:[a,b]}').TagActualValue(["a","b"]).Required().Validate(min=1,max=10,required)
     valueB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'abc').Required()
+        - github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'${app.valueB:abc}').TagActualValue(abc).Required()
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes))
 	})

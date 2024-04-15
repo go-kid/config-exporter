@@ -53,7 +53,7 @@ func (d *postProcessor) PostProcessBeforeInstantiation(m *component_definition.M
 	}
 	for _, prop := range m.GetAllProperties() {
 		if prop.PropertyType == component_definition.PropertyTypeConfiguration {
-			d.propertyOriginArgs[prop.Field.ID()+prop.Tag] = copyArg(prop.Args())
+			d.propertyOriginArgs[prop.Field.ID()] = copyArg(prop.Args())
 			d.properties = append(d.properties, prop)
 		}
 		prop.SetArg(component_definition.ArgRequired, "false")
@@ -70,7 +70,7 @@ func (d *postProcessor) ForEachConfiguration(f func(property *component_definiti
 		for p, a := range property.Configurations {
 			prefix := p
 			value := a
-			tagArg := d.propertyOriginArgs[property.Field.ID()+property.Tag]
+			tagArg := d.propertyOriginArgs[property.Field.ID()]
 			for argType, strings := range tagArg {
 				property.SetArg(argType, strings...)
 			}
