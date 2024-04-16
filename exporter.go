@@ -56,6 +56,7 @@ func (d *postProcessor) PostProcessBeforeInstantiation(m *component_definition.M
 		if prop.PropertyType == component_definition.PropertyTypeConfiguration {
 			d.propertyOriginArgs[prop.Field.ID()] = copyArg(prop.Args())
 			d.properties = append(d.properties, prop)
+			prop.Value.Set(reflect.ValueOf(reflectx.ZeroValue(prop.Type)))
 		}
 		prop.SetArg(component_definition.ArgRequired, "false")
 	}
@@ -66,27 +67,56 @@ func (d *postProcessor) PostProcessBeforeInitialization(component any, component
 	return nil, nil
 }
 
-func (d *postProcessor) ForEachConfiguration(f func(property *component_definition.Property, prefix string, val any)) {
+func (d *postProcessor) ForEachConfiguration(f Iterator) {
 	for _, property := range d.properties {
+		tagArg := d.propertyOriginArgs[property.Field.ID()]
+		for argType, strings := range tagArg {
+			property.SetArg(argType, strings...)
+		}
+
+		if property.Tag == definition.PrefixTag {
+			invokeHandler(property, property.TagVal, property.Value.Interface(), f)
+			continue
+		}
 		for p, a := range property.Configurations {
-			prefix := p
-			value := a
-			tagArg := d.propertyOriginArgs[property.Field.ID()]
-			for argType, strings := range tagArg {
-				property.SetArg(argType, strings...)
+			if a == nil {
+				a = reflectx.ZeroValue(property.Type)
 			}
+			invokeHandler(property, p, a, f)
+		}
+	}
+}
+
+func invokeHandler(property *component_definition.Property, p string, a any, f Iterator) {
+	var mapper = "yaml"
+	if mappers, ok := property.Args().Find("mapper"); ok && len(mappers) != 0 {
+		mapper = mappers[0]
+	}
+	t := reflect.TypeOf(a)
+	if a == nil {
+		a = reflectx.ZeroValue(t)
+	}
+	switch t.Kind() {
+	case reflect.Struct, reflect.Map:
+		for prefix, value := range convertToProperties(mapper, p, a) {
 			f(property, prefix, value)
 		}
+	case reflect.Pointer:
+		if eleKind := t.Elem().Kind(); eleKind == reflect.Struct || eleKind == reflect.Map {
+			for prefix, value := range convertToProperties(mapper, p, a) {
+				f(property, prefix, value)
+			}
+			return
+		}
+		fallthrough
+	default:
+		f(property, p, a)
 	}
 }
 
 func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 	pm := properties.New()
 	d.ForEachConfiguration(func(property *component_definition.Property, prefix string, value any) {
-		if value == nil {
-			value = reflectx.ZeroValue(property.Type)
-		}
-
 		if mode.Eq(AnnotationArgs) {
 			property.Args().ForEach(func(argType component_definition.ArgType, args []string) {
 				if len(args) == 0 || (len(args) == 1 && args[0] == "") {
@@ -116,47 +146,23 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 			if mode.Eq(OnlyNew) {
 				return
 			}
-			if mode.Eq(Append) {
-				value = origin
-			}
 		}
-
-		setProperties(property, pm, prefix, value)
+		pm.Set(prefix, value)
 	})
 	return pm
 }
 
-func setProperties(property *component_definition.Property, pm properties.Properties, prefix string, value any) {
-	var mapper = "yaml"
-	if mappers, ok := property.Args().Find("mapper"); ok && len(mappers) != 0 {
-		mapper = mappers[0]
-	}
-
-	switch property.Type.Kind() {
-	case reflect.Struct, reflect.Map:
-		deepSet(prefix, value, pm, mapper)
-	case reflect.Pointer:
-		if eleKind := property.Type.Elem().Kind(); eleKind == reflect.Struct || eleKind == reflect.Map {
-			deepSet(prefix, value, pm, mapper)
-			return
-		}
-		fallthrough
-	default:
-		pm.Set(prefix, value)
-	}
-}
-
-func deepSet(prefix string, value any, pm properties.Properties, mapper string) {
+func convertToProperties(mapper string, prefix string, value any) properties.Properties {
 	subRaw, err := toMap(value, mapper)
 	if err != nil {
 		syslog.Warnf("deep set properties err: %v", err)
-		pm.Set(prefix, value)
-		return
+		return nil
 	}
-	subProp := properties.NewFromMap(subRaw)
-	for subP, subAnyVal := range subProp {
-		pm.Set(prefix+"."+subP, subAnyVal)
+	result := properties.New()
+	for subP, subValue := range properties.NewFromMap(subRaw) {
+		result.Set(prefix+"."+subP, subValue)
 	}
+	return result
 }
 
 func toMap(a any, mapper string) (map[string]any, error) {

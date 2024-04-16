@@ -14,11 +14,11 @@ type SubConfig struct {
 }
 
 type Config struct {
-	A     string         `yaml:"a"`
-	B     int            `yaml:"b"`
-	Slice []string       `yaml:"slice"`
-	Array [3]float64     `yaml:"array"`
-	M     map[string]int `yaml:"m"`
+	A     string         `yaml:"A"`
+	B     int            `yaml:"B"`
+	Slice []string       `yaml:"Slice"`
+	Array [3]float64     `yaml:"Array"`
+	M     map[string]int `yaml:"M"`
 	G     Greeting       `yaml:"-"`
 }
 
@@ -27,12 +27,12 @@ func (c *Config) Prefix() string {
 }
 
 type MergeConfig struct {
-	S     string         `yaml:"s" json:"S"`
-	B     bool           `yaml:"b" json:"B"`
-	M     map[string]int `yaml:"m" json:"M"`
-	Slice []float64      `yaml:"slice" json:"Slice"`
-	Sub   SubConfig      `yaml:"sub" json:"Sub"`
-	SubP  *SubConfig     `yaml:"subP" json:"SubP"`
+	S     string         `yaml:"S" json:"S"`
+	B     bool           `yaml:"B" json:"B"`
+	M     map[string]int `yaml:"M" json:"M"`
+	Slice []float64      `yaml:"Slice" json:"Slice"`
+	Sub   SubConfig      `yaml:"Sub" json:"Sub"`
+	SubP  *SubConfig     `yaml:"SubP" json:"SubP"`
 }
 
 func (c *MergeConfig) Prefix() string {
@@ -40,12 +40,12 @@ func (c *MergeConfig) Prefix() string {
 }
 
 type MergeParent struct {
-	S2     string            `prop:"Merge.s2:s2"`
-	B2     bool              `prop:"Merge.b2"`
-	M2     map[string]string `prop:"Merge.m2:map[foo:bar]"`
-	Slice2 []int64           `prop:"Merge.slice2:[1,2,3]"`
-	Sub2   SubConfig         `prop:"Merge.sub2"`
-	SubP2  *SubConfig        `prop:"Merge.subP2:map[sub:sub]"`
+	S2     string            `prop:"Merge.S2:s2"`
+	B2     bool              `prop:"Merge.B2"`
+	M2     map[string]string `prop:"Merge.M2:map[foo:bar]"`
+	Slice2 []int64           `prop:"Merge.Slice2:[1,2,3]"`
+	Sub2   SubConfig         `prop:"Merge.Sub2"`
+	SubP2  *SubConfig        `prop:"Merge.SubP2:map[sub:sub]"`
 }
 
 type A struct {
@@ -79,38 +79,38 @@ type Greeting interface {
 }
 
 var defaultConfig = []byte(`Demo:
-    a: string
-    array:
+    A: string
+    Array:
         - 0
         - 0
         - 0
-    b: 0
-    m:
+    B: 0
+    M:
         string: 0
-    slice:
+    Slice:
         - string
 Merge:
-    b: false
-    b2: false
-    m:
+    B: false
+    B2: false
+    M:
         string: 0
-    m2:
+    M2:
         foo: bar
-    s: string
-    s2: s2
-    slice:
+    S: string
+    S2: s2
+    Slice:
         - 0
-    slice2:
+    Slice2:
         - 1
         - 2
         - 3
-    sub:
+    Sub:
         sub: string
-    sub2:
+    Sub2:
         sub: string
-    subP:
+    SubP:
         sub: string
-    subP2:
+    SubP2:
         sub: sub
 app:
     configA: string
@@ -133,23 +133,34 @@ func TestConfigExporter(t *testing.T) {
 		bytes, err := yaml.Marshal(exporter.GetConfig(0).Expand())
 		assert.NoError(t, err)
 
-		assert.Equal(t, string(defaultConfig), string(bytes))
+		assert.Equal(t, string(defaultConfig), string(bytes), string(bytes))
 	})
-
 	t.Run("AppendMode", func(t *testing.T) {
 		cfg := []byte(`
 Demo:
-    a: this is a test
-    b: 20
-    slice:
+    A: this is a test
+    B: 20
+    Slice:
         - "hello"
         - "world"
-    array:
+    Array:
         - 999
         - 888
         - 777
-    m:
-        select: 1
+    M:
+        Select: 22
+Merge:
+    B: true
+    M:
+        Select: 33
+    S: "hello"
+    Slice:
+        - 9
+        - 8
+    Sub:
+        sub: sub sub
+    SubP:
+        sub: subP sub
 app:
     configA: cfgA
     configB: b
@@ -157,6 +168,49 @@ app:
         - a
         - b
     valueB: abc
+GRpcService:
+    adminAccountAddress:
+        address: string
+        isTls: false
+    adminAccountV2Address:
+        address: string
+        isTls: false
+    beatAddress:
+        address: string
+        isTls: false
+    billAddress:
+        address: string
+        isTls: false
+    buKaRecommend:
+        address: string
+        isTls: false
+    claimAddress:
+        address: string
+        isTls: false
+    customerAccountAddress:
+        address: string
+        isTls: false
+    customerAccountOTPAddress:
+        address: string
+        isTls: false
+    mailSenderAddress:
+        address: string
+        isTls: false
+    notificationAddress:
+        address: string
+        isTls: false
+    paymentAddress:
+        address: string
+        isTls: false
+    policyAddress:
+        address: string
+        isTls: false
+    productAddress:
+        address: string
+        isTls: false
+    searchAddress:
+        address: string
+        isTls: false
 `)
 		a := &A{}
 		exporter := NewConfigExporter()
@@ -166,43 +220,44 @@ app:
 			app.SetComponents(a, exporter),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(Append).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(0).Expand())
 		assert.NoError(t, err)
 
 		var exampleConfig = []byte(`Demo:
-    a: this is a test
-    array:
+    A: this is a test
+    Array:
         - 999
         - 888
         - 777
-    b: 20
-    m:
-        select: 1
-    slice:
+    B: 20
+    M:
+        select: 22
+    Slice:
         - hello
         - world
 Merge:
-    b: false
-    b2: false
-    m:
-        string: 0
-    m2:
+    B: true
+    B2: false
+    M:
+        select: 33
+    M2:
         foo: bar
-    s: string
-    s2: s2
-    slice:
-        - 0
-    slice2:
+    S: hello
+    S2: s2
+    Slice:
+        - 9
+        - 8
+    Slice2:
         - 1
         - 2
         - 3
-    sub:
+    Sub:
+        sub: sub sub
+    Sub2:
         sub: string
-    sub2:
-        sub: string
-    subP:
-        sub: string
-    subP2:
+    SubP:
+        sub: subP sub
+    SubP2:
         sub: sub
 app:
     configA: cfgA
@@ -212,7 +267,7 @@ app:
         - b
     valueB: abc
 `)
-		assert.Equal(t, string(exampleConfig), string(bytes))
+		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
 	t.Run("OnlyNewMode", func(t *testing.T) {
 		cfg := []byte(`Merge:
@@ -254,17 +309,17 @@ config: "hello"
 		assert.NoError(t, err)
 
 		var exampleConfig = []byte(`Merge:
-    b2: false
-    m2:
+    B2: false
+    M2:
         foo: bar
-    s2: s2
-    slice2:
+    S2: s2
+    Slice2:
         - 1
         - 2
         - 3
-    sub2:
+    Sub2:
         sub: string
-    subP2:
+    SubP2:
         sub: sub
 app:
     configA: string
@@ -274,7 +329,7 @@ app:
         - b
     valueB: abc
 `)
-		assert.Equal(t, string(exampleConfig), string(bytes))
+		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
 	t.Run("AnnotationSourceMode", func(t *testing.T) {
 		type A2 struct {
@@ -291,25 +346,58 @@ app:
 		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew).Expand())
 		assert.NoError(t, err)
 
-		var exampleConfig = []byte(`Demo@Sources:
-    - github.com/go-kid/config-exporter/A
-    - github.com/go-kid/config-exporter/A2
+		var exampleConfig = []byte(`Demo:
+    A@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    Array@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    B@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    M@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    Slice@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
 Merge:
-    b2@Sources:
+    B@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    B2@Sources:
         - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    m2@Sources:
+    M@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    M2:
+        foo@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    S@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    S2@Sources:
         - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    s2@Sources:
+    Slice@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
+    Slice2@Sources:
         - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    subP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-Merge@Sources:
-    - github.com/go-kid/config-exporter/A
-    - github.com/go-kid/config-exporter/A2
+    Sub:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A
+            - github.com/go-kid/config-exporter/A2
+    Sub2:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    SubP:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A
+            - github.com/go-kid/config-exporter/A2
+    SubP2:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent)
 app:
     configA@Sources:
         - github.com/go-kid/config-exporter/A
@@ -320,7 +408,7 @@ app:
     valueB@Sources:
         - github.com/go-kid/config-exporter/A
 `)
-		assert.Equal(t, string(exampleConfig), string(bytes))
+		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
 	t.Run("AnnotationSourcePropertyMode", func(t *testing.T) {
 		type A2 struct {
@@ -339,25 +427,58 @@ app:
 
 		bytes, err = yaml.Marshal(exporter.GetConfig(AnnotationSourceProperty | OnlyNew).Expand())
 		assert.NoError(t, err)
-		exampleConfig := []byte(`Demo@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
-    - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+		exampleConfig := []byte(`Demo:
+    A@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    Array@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    B@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    M@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    Slice@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
 Merge:
-    b2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.b2}').TagActualValue(false).Required()
-    m2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.m2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
-    s2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'${Merge.s2:s2}').TagActualValue(s2).Required()
-    slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'${Merge.slice2:[1,2,3]}').TagActualValue([1,2,3]).Required()
-    sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'${Merge.sub2}').TagActualValue({"sub":"string"}).Required()
-    subP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.subP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
-Merge@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    B@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    B2@Sources:
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.B2}').TagActualValue(false).Required()
+    M@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    M2:
+        foo@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.M2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
+    S@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    S2@Sources:
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'${Merge.S2:s2}').TagActualValue(s2).Required()
+    Slice@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    Slice2@Sources:
+        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'${Merge.Slice2:[1,2,3]}').TagActualValue([1,2,3]).Required()
+    Sub:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+            - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    Sub2:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'${Merge.Sub2}').TagActualValue({"sub":"string"}).Required()
+    SubP:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+            - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    SubP2:
+        sub@Sources:
+            - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.SubP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
 app:
     configA@Sources:
         - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'${app.configA}').TagActualValue(string).Required()
@@ -368,7 +489,7 @@ app:
     valueB@Sources:
         - github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'${app.valueB:abc}').TagActualValue(abc).Required()
 `)
-		assert.Equal(t, string(exampleConfig), string(bytes))
+		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
 	t.Run("AnnotationArgsMode", func(t *testing.T) {
 		exporter := NewConfigExporter()
@@ -380,25 +501,59 @@ app:
 		assert.NoError(t, err)
 		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationArgs | OnlyNew).Expand())
 		assert.NoError(t, err)
-		var exampleConfig = []byte(`Demo@Args:
-    Required: true
+		var exampleConfig = []byte(`Demo:
+    A@Args:
+        Required: true
+    Array@Args:
+        Required: true
+    B@Args:
+        Required: true
+    M@Args:
+        Required: true
+    Slice@Args:
+        Required: true
 Merge:
-    b2@Args:
+    B@Args:
+        Mapper:
+            - yaml
         Required: true
-    m2@Args:
+    B2@Args:
         Required: true
-    s2@Args:
+    M@Args:
+        Mapper:
+            - yaml
         Required: true
-    slice2@Args:
+    M2:
+        foo@Args:
+            Required: true
+    S@Args:
+        Mapper:
+            - yaml
         Required: true
-    sub2@Args:
+    S2@Args:
         Required: true
-    subP2@Args:
+    Slice@Args:
+        Mapper:
+            - yaml
         Required: true
-Merge@Args:
-    Mapper:
-        - yaml
-    Required: true
+    Slice2@Args:
+        Required: true
+    Sub:
+        sub@Args:
+            Mapper:
+                - yaml
+            Required: true
+    Sub2:
+        sub@Args:
+            Required: true
+    SubP:
+        sub@Args:
+            Mapper:
+                - yaml
+            Required: true
+    SubP2:
+        sub@Args:
+            Required: true
 app:
     configA@Args:
         Required: true
