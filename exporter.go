@@ -12,7 +12,8 @@ import (
 	"github.com/go-kid/ioc/util/mode"
 	"github.com/go-kid/ioc/util/properties"
 	"github.com/go-kid/ioc/util/reflectx"
-	"gopkg.in/yaml.v3"
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	"reflect"
 )
 
@@ -126,12 +127,17 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 }
 
 func setProperties(property *component_definition.Property, pm properties.Properties, prefix string, value any) {
+	var mapper = "yaml"
+	if mappers, ok := property.Args().Find("mapper"); ok && len(mappers) != 0 {
+		mapper = mappers[0]
+	}
+
 	switch property.Type.Kind() {
 	case reflect.Struct, reflect.Map:
-		deepSet(prefix, value, pm)
+		deepSet(prefix, value, pm, mapper)
 	case reflect.Pointer:
 		if eleKind := property.Type.Elem().Kind(); eleKind == reflect.Struct || eleKind == reflect.Map {
-			deepSet(prefix, value, pm)
+			deepSet(prefix, value, pm, mapper)
 			return
 		}
 		fallthrough
@@ -140,23 +146,49 @@ func setProperties(property *component_definition.Property, pm properties.Proper
 	}
 }
 
-func deepSet(prefix string, value any, pm properties.Properties) {
-	subRaw := toMap(value)
+func deepSet(prefix string, value any, pm properties.Properties, mapper string) {
+	subRaw, err := toMap(value, mapper)
+	if err != nil {
+		syslog.Warnf("deep set properties err: %v", err)
+		pm.Set(prefix, value)
+		return
+	}
 	subProp := properties.NewFromMap(subRaw)
 	for subP, subAnyVal := range subProp {
 		pm.Set(prefix+"."+subP, subAnyVal)
 	}
 }
 
-func toMap(a any) map[string]any {
-	bytes, err := yaml.Marshal(a)
-	if err != nil {
-		syslog.Panicf("yaml marshal error: %#v, %+v", a, err)
-	}
+func toMap(a any, mapper string) (map[string]any, error) {
 	var subRaw = make(map[string]any)
-	err = yaml.Unmarshal(bytes, subRaw)
+
+	config := newDecodeConfig(&subRaw, []mapstructure.DecodeHookFunc{
+		mapstructure.StringToTimeDurationHookFunc(),
+	})
+	config.TagName = mapper
+	decoder, err := mapstructure.NewDecoder(config)
 	if err != nil {
-		syslog.Panicf("yaml unmarshal error: %s, %+v", string(bytes), err)
+		return nil, errors.Wrapf(err, "create mapstructure decoder error")
 	}
-	return subRaw
+	err = decoder.Decode(a)
+	if err != nil {
+		return nil, errors.Wrapf(err, "mapstructure decode %+v", a)
+	}
+	return subRaw, nil
+}
+
+func newDecodeConfig(v any, hooks []mapstructure.DecodeHookFunc) *mapstructure.DecoderConfig {
+	return &mapstructure.DecoderConfig{
+		DecodeHook:           mapstructure.ComposeDecodeHookFunc(hooks...),
+		ErrorUnused:          false,
+		ErrorUnset:           false,
+		ZeroFields:           false,
+		WeaklyTypedInput:     true,
+		Squash:               false,
+		Metadata:             nil,
+		Result:               v,
+		TagName:              "yaml",
+		IgnoreUntaggedFields: false,
+		MatchName:            nil,
+	}
 }

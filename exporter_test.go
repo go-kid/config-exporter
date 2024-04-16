@@ -27,16 +27,16 @@ func (c *Config) Prefix() string {
 }
 
 type MergeConfig struct {
-	S     string         `yaml:"s"`
-	B     bool           `yaml:"b"`
-	M     map[string]int `yaml:"m"`
-	Slice []float64      `yaml:"slice"`
-	Sub   SubConfig      `yaml:"sub"`
-	SubP  *SubConfig     `yaml:"subP"`
+	S     string         `yaml:"s" json:"S"`
+	B     bool           `yaml:"b" json:"B"`
+	M     map[string]int `yaml:"m" json:"M"`
+	Slice []float64      `yaml:"slice" json:"Slice"`
+	Sub   SubConfig      `yaml:"sub" json:"Sub"`
+	SubP  *SubConfig     `yaml:"subP" json:"SubP"`
 }
 
 func (c *MergeConfig) Prefix() string {
-	return "Merge"
+	return "Merge,mapper=yaml"
 }
 
 type MergeParent struct {
@@ -356,8 +356,8 @@ Merge:
     subP2@Sources:
         - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.subP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
 Merge@Sources:
-    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Required()
-    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Required()
+    - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
 app:
     configA@Sources:
         - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'${app.configA}').TagActualValue(string).Required()
@@ -396,6 +396,8 @@ Merge:
     subP2@Args:
         Required: true
 Merge@Args:
+    Mapper:
+        - yaml
     Required: true
 app:
     configA@Args:
@@ -413,6 +415,6 @@ app:
     valueB@Args:
         Required: true
 `)
-		assert.Equal(t, string(exampleConfig), string(bytes))
+		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
 }
