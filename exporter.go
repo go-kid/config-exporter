@@ -1,6 +1,7 @@
 package config_exporter
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-kid/ioc/app"
 	"github.com/go-kid/ioc/component_definition"
@@ -151,9 +152,32 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 				return
 			}
 		}
+		if reflect.TypeOf(value).Kind() == reflect.Map {
+			err := flatSetMap(pm, prefix, value)
+			if err != nil {
+				syslog.Errorf("flat set map value %+v error: %v", value, err)
+			}
+			return
+		}
 		pm.Set(prefix, value)
 	})
 	return pm
+}
+
+func flatSetMap(pm properties.Properties, prefix string, value any) error {
+	bytes, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	var rawMap = make(map[string]any)
+	err = json.Unmarshal(bytes, &rawMap)
+	if err != nil {
+		return err
+	}
+	for s, a := range properties.NewFromMap(rawMap) {
+		pm.Set(prefix+"."+s, a)
+	}
+	return nil
 }
 
 func convertToProperties(mapper string, prefix string, value any) properties.Properties {
