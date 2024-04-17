@@ -54,7 +54,7 @@ func (d *postProcessor) PostProcessBeforeInstantiation(m *component_definition.M
 	}
 	for _, prop := range m.GetAllProperties() {
 		if prop.PropertyType == component_definition.PropertyTypeConfiguration {
-			d.propertyOriginArgs[prop.Field.ID()] = copyArg(prop.Args())
+			d.propertyOriginArgs[prop.ID()] = copyArg(prop.Args())
 			d.properties = append(d.properties, prop)
 			prop.Value.Set(reflect.ValueOf(reflectx.ZeroValue(prop.Type)))
 		}
@@ -69,7 +69,7 @@ func (d *postProcessor) PostProcessBeforeInitialization(component any, component
 
 func (d *postProcessor) ForEachConfiguration(f Iterator) {
 	for _, property := range d.properties {
-		tagArg := d.propertyOriginArgs[property.Field.ID()]
+		tagArg := d.propertyOriginArgs[property.ID()]
 		for argType, strings := range tagArg {
 			property.SetArg(argType, strings...)
 		}
@@ -97,12 +97,12 @@ func invokeHandler(property *component_definition.Property, p string, a any, f I
 		a = reflectx.ZeroValue(t)
 	}
 	switch t.Kind() {
-	case reflect.Struct, reflect.Map:
+	case reflect.Struct:
 		for prefix, value := range convertToProperties(mapper, p, a) {
 			f(property, prefix, value)
 		}
 	case reflect.Pointer:
-		if eleKind := t.Elem().Kind(); eleKind == reflect.Struct || eleKind == reflect.Map {
+		if eleKind := t.Elem().Kind(); eleKind == reflect.Struct {
 			for prefix, value := range convertToProperties(mapper, p, a) {
 				f(property, prefix, value)
 			}
@@ -119,10 +119,14 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 	d.ForEachConfiguration(func(property *component_definition.Property, prefix string, value any) {
 		if mode.Eq(AnnotationArgs) {
 			property.Args().ForEach(func(argType component_definition.ArgType, args []string) {
+				var p = prefix
+				if property.Tag == definition.PrefixTag {
+					p = property.TagVal
+				}
 				if len(args) == 0 || (len(args) == 1 && args[0] == "") {
-					pm.Set(fmt.Sprintf("%s@Args.%s", prefix, argType), true)
+					pm.Set(fmt.Sprintf("%s@Args.%s", p, argType), true)
 				} else {
-					pm.Set(fmt.Sprintf("%s@Args.%s", prefix, argType), args)
+					pm.Set(fmt.Sprintf("%s@Args.%s", p, argType), args)
 				}
 			})
 		}
@@ -167,9 +171,9 @@ func convertToProperties(mapper string, prefix string, value any) properties.Pro
 
 func toMap(a any, mapper string) (map[string]any, error) {
 	var subRaw = make(map[string]any)
-
 	config := newDecodeConfig(&subRaw, []mapstructure.DecodeHookFunc{
 		mapstructure.StringToTimeDurationHookFunc(),
+		AssignNilPartialZeroValueHookFunc(),
 	})
 	config.TagName = mapper
 	decoder, err := mapstructure.NewDecoder(config)
@@ -181,6 +185,19 @@ func toMap(a any, mapper string) (map[string]any, error) {
 		return nil, errors.Wrapf(err, "mapstructure decode %+v", a)
 	}
 	return subRaw, nil
+}
+
+func AssignNilPartialZeroValueHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data any) (any, error) {
+		return data, reflectx.WalkField(data, func(parent *reflectx.Node, field reflect.StructField, value reflect.Value) error {
+			if field.Type.Kind() == reflect.Pointer &&
+				field.Type.Elem().Kind() == reflect.Struct &&
+				value.IsNil() {
+				value.Set(reflect.ValueOf(reflectx.ZeroValue(field.Type)))
+			}
+			return nil
+		})
+	}
 }
 
 func newDecodeConfig(v any, hooks []mapstructure.DecodeHookFunc) *mapstructure.DecoderConfig {
