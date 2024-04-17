@@ -66,8 +66,10 @@ github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcP
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20191125211704-12ad95a8df72/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20200222043503-6f7a984d4dc4/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
-github.com/go-kid/ioc v1.5.16 h1:3CZULnVQLGC7qyuNFt4zAT5g0uGqS7t+vZYXRRmcE/0=
-github.com/go-kid/ioc v1.5.16/go.mod h1:Ah1xetTh2ljsmH/deIKoQJcA3YP32CmauHnMgOCUC5w=
+github.com/go-kid/ioc v1.5.18 h1:O5xpRRjt+eCRTxWhHHYa50VGPFjfkdhGGfCbO9ZXrP4=
+github.com/go-kid/ioc v1.5.18/go.mod h1:Pj+YCmP1T35r17zYHzWdEM4QoYUX2TFH5GlXfgt+pn4=
+github.com/go-kid/properties v0.0.3 h1:oFRBVrWynZYQwQljmk9+10cCsDMa4zVawrh5mKg0rQw=
+github.com/go-kid/properties v0.0.3/go.mod h1:IxSdFbvIu1n5UcwOfDVgZ31erVDriAlJra+e1s9hNxc=
 github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=
 github.com/go-playground/assert/v2 v2.2.0/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
 github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=

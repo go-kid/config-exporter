@@ -11,8 +11,8 @@ import (
 	"github.com/go-kid/ioc/factory/processors"
 	"github.com/go-kid/ioc/syslog"
 	"github.com/go-kid/ioc/util/mode"
-	"github.com/go-kid/ioc/util/properties"
 	"github.com/go-kid/ioc/util/reflectx"
+	"github.com/go-kid/properties"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"reflect"
@@ -140,11 +140,7 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 				source = property.Holder.String()
 			}
 			annoPath := fmt.Sprintf("%s@Sources", prefix)
-			if sources, ok := pm.Get(annoPath); ok {
-				pm.Set(annoPath, append(sources.([]string), source))
-			} else {
-				pm.Set(annoPath, []string{source})
-			}
+			pm.Add(annoPath, source)
 		}
 
 		if origin := d.configure.Get(prefix); origin != nil {
@@ -152,13 +148,13 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 				return
 			}
 		}
-		if reflect.TypeOf(value).Kind() == reflect.Map {
-			err := flatSetMap(pm, prefix, value)
-			if err != nil {
-				syslog.Errorf("flat set map value %+v error: %v", value, err)
-			}
-			return
-		}
+		//if reflect.TypeOf(value).Kind() == reflect.Map {
+		//	err := flatSetMap(pm, prefix, value)
+		//	if err != nil {
+		//		syslog.Errorf("flat set map value %+v error: %v", value, err)
+		//	}
+		//	return
+		//}
 		pm.Set(prefix, value)
 	})
 	return pm

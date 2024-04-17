@@ -3,7 +3,7 @@ package config_exporter
 import (
 	"github.com/go-kid/ioc/component_definition"
 	"github.com/go-kid/ioc/util/mode"
-	"github.com/go-kid/ioc/util/properties"
+	"github.com/go-kid/properties"
 )
 
 type ConfigExporter interface {

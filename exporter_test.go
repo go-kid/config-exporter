@@ -329,9 +329,10 @@ PartialZeroValue:
     B@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
-    M@Sources:
-        - github.com/go-kid/config-exporter/A
-        - github.com/go-kid/config-exporter/A2
+    M:
+        string@Sources:
+            - github.com/go-kid/config-exporter/A
+            - github.com/go-kid/config-exporter/A2
     Slice@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
@@ -339,59 +340,45 @@ Merge:
     B@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
-    B2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    M@Sources:
-        - github.com/go-kid/config-exporter/A
-        - github.com/go-kid/config-exporter/A2
-    M2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    B2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    M:
+        string@Sources:
+            - github.com/go-kid/config-exporter/A
+            - github.com/go-kid/config-exporter/A2
+    M2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
     S@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
-    S2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    S2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
     Slice@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
-    Slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    Slice2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
     Sub:
         sub@Sources:
             - github.com/go-kid/config-exporter/A
             - github.com/go-kid/config-exporter/A2
-    Sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
+    Sub2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
     SubP:
         sub@Sources:
             - github.com/go-kid/config-exporter/A
             - github.com/go-kid/config-exporter/A2
-    SubP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent)
-PartialZeroMap@Sources:
-    - github.com/go-kid/config-exporter/A
+    SubP2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
+PartialZeroMap@Sources: github.com/go-kid/config-exporter/A
 PartialZeroValue:
     Sub1:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A
+        sub@Sources: github.com/go-kid/config-exporter/A
     Sub2:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A
+        sub@Sources: github.com/go-kid/config-exporter/A
     Sub3:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A
+        sub@Sources: github.com/go-kid/config-exporter/A
     Sub4:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A
+        sub@Sources: github.com/go-kid/config-exporter/A
 app:
-    configA@Sources:
-        - github.com/go-kid/config-exporter/A
-    configB@Sources:
-        - github.com/go-kid/config-exporter/A
-    configSlice@Sources:
-        - github.com/go-kid/config-exporter/A
-    valueB@Sources:
-        - github.com/go-kid/config-exporter/A
+    configA@Sources: github.com/go-kid/config-exporter/A
+    configB@Sources: github.com/go-kid/config-exporter/A
+    configSlice@Sources: github.com/go-kid/config-exporter/A
+    valueB@Sources: github.com/go-kid/config-exporter/A
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})
@@ -422,9 +409,10 @@ app:
     B@Sources:
         - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
         - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
-    M@Sources:
-        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
-        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    M:
+        string@Sources:
+            - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+            - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
     Slice@Sources:
         - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
         - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
@@ -432,59 +420,45 @@ Merge:
     B@Sources:
         - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
         - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    B2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.B2}').TagActualValue(false).Required()
-    M@Sources:
-        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    M2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.M2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
+    B2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.B2}').TagActualValue(false).Required()
+    M:
+        string@Sources:
+            - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+            - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    M2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.M2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
     S@Sources:
         - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
         - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    S2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'${Merge.S2:s2}').TagActualValue(s2).Required()
+    S2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(S2).Type(Configuration).Tag(value:'${Merge.S2:s2}').TagActualValue(s2).Required()
     Slice@Sources:
         - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
         - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    Slice2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'${Merge.Slice2:[1,2,3]}').TagActualValue([1,2,3]).Required()
+    Slice2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Slice2).Type(Configuration).Tag(value:'${Merge.Slice2:[1,2,3]}').TagActualValue([1,2,3]).Required()
     Sub:
         sub@Sources:
             - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
             - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    Sub2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'${Merge.Sub2}').TagActualValue({"sub":"string"}).Required()
+    Sub2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(Sub2).Type(Configuration).Tag(value:'${Merge.Sub2}').TagActualValue({"sub":"string"}).Required()
     SubP:
         sub@Sources:
             - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
             - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-    SubP2@Sources:
-        - github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.SubP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
-PartialZeroMap@Sources:
-    - github.com/go-kid/config-exporter/A.Field(PartialZeroMap).Type(Configuration).Tag(value:'${PartialZeroMap:map[sub2:map[sub:sub2]]}').TagActualValue({"sub2":{"sub":"sub2"}}).Required()
+    SubP2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(SubP2).Type(Configuration).Tag(value:'${Merge.SubP2:map[sub:sub]}').TagActualValue({"sub":"sub"}).Required()
+PartialZeroMap@Sources: github.com/go-kid/config-exporter/A.Field(PartialZeroMap).Type(Configuration).Tag(value:'${PartialZeroMap:map[sub2:map[sub:sub2]]}').TagActualValue({"sub2":{"sub":"sub2"}}).Required()
 PartialZeroValue:
     Sub1:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
+        sub@Sources: github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
     Sub2:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
+        sub@Sources: github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
     Sub3:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
+        sub@Sources: github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
     Sub4:
-        sub@Sources:
-            - github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
+        sub@Sources: github.com/go-kid/config-exporter/A.Field(PartialZeroValue).Type(Configuration).Tag(prefix:'PartialZeroValue').TagActualValue(PartialZeroValue).Required()
 app:
-    configA@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'${app.configA}').TagActualValue(string).Required()
-    configB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigB).Type(Configuration).Tag(value:'${app.configB:b}').TagActualValue(b).Required().Validate(eq=b)
-    configSlice@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ConfigSlice).Type(Configuration).Tag(value:'${app.configSlice:[a,b]}').TagActualValue(["a","b"]).Required().Validate(min=1,max=10,required)
-    valueB@Sources:
-        - github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'${app.valueB:abc}').TagActualValue(abc).Required()
+    configA@Sources: github.com/go-kid/config-exporter/A.Field(ConfigA).Type(Configuration).Tag(value:'${app.configA}').TagActualValue(string).Required()
+    configB@Sources: github.com/go-kid/config-exporter/A.Field(ConfigB).Type(Configuration).Tag(value:'${app.configB:b}').TagActualValue(b).Required().Validate(eq=b)
+    configSlice@Sources: github.com/go-kid/config-exporter/A.Field(ConfigSlice).Type(Configuration).Tag(value:'${app.configSlice:[a,b]}').TagActualValue(["a","b"]).Required().Validate(min=1,max=10,required)
+    valueB@Sources: github.com/go-kid/config-exporter/A.Field(ValueB).Type(Configuration).Tag(value:'${app.valueB:abc}').TagActualValue(abc).Required()
 `)
 		assert.Equal(t, string(exampleConfig), string(bytes), string(bytes))
 	})

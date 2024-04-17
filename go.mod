@@ -3,7 +3,10 @@ module github.com/go-kid/config-exporter
 go 1.22.1
 
 require (
-	github.com/go-kid/ioc v1.5.16
+	github.com/go-kid/ioc v1.5.18
+	github.com/go-kid/properties v0.0.3
+	github.com/mitchellh/mapstructure v1.5.0
+	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -19,9 +22,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/samber/lo v1.38.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
