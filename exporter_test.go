@@ -151,7 +151,7 @@ func TestConfigExporter(t *testing.T) {
 			app.SetComponents(a, exporter),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(0).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(0))
 		assert.NoError(t, err)
 
 		assert.Equal(t, string(defaultConfig), string(bytes), string(bytes))
@@ -208,7 +208,7 @@ PartialZeroMap:
 			app.SetComponents(a, exporter),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(0).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(0))
 		assert.NoError(t, err)
 
 		var exampleConfig = []byte(`Demo:
@@ -280,7 +280,7 @@ app:
 			app.SetComponents(a, exporter),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(OnlyNew).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(OnlyNew))
 		assert.NoError(t, err)
 
 		var exampleConfig = []byte(`Merge:
@@ -316,7 +316,7 @@ PartialZeroValue:
 			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew))
 		assert.NoError(t, err)
 
 		var exampleConfig = []byte(`Demo:
@@ -329,10 +329,9 @@ PartialZeroValue:
     B@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
-    M:
-        string@Sources:
-            - github.com/go-kid/config-exporter/A
-            - github.com/go-kid/config-exporter/A2
+    M@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
     Slice@Sources:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
@@ -341,10 +340,9 @@ Merge:
         - github.com/go-kid/config-exporter/A
         - github.com/go-kid/config-exporter/A2
     B2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
-    M:
-        string@Sources:
-            - github.com/go-kid/config-exporter/A
-            - github.com/go-kid/config-exporter/A2
+    M@Sources:
+        - github.com/go-kid/config-exporter/A
+        - github.com/go-kid/config-exporter/A2
     M2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent)
     S@Sources:
         - github.com/go-kid/config-exporter/A
@@ -394,10 +392,10 @@ app:
 			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationSource | OnlyNew))
 		assert.NoError(t, err)
 
-		bytes, err = yaml.Marshal(exporter.GetConfig(AnnotationSourceProperty | OnlyNew).Expand())
+		bytes, err = yaml.Marshal(exporter.GetConfig(AnnotationSourceProperty | OnlyNew))
 		assert.NoError(t, err)
 		exampleConfig := []byte(`Demo:
     A@Sources:
@@ -409,10 +407,9 @@ app:
     B@Sources:
         - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
         - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
-    M:
-        string@Sources:
-            - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
-            - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+    M@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
+        - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
     Slice@Sources:
         - github.com/go-kid/config-exporter/A.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
         - github.com/go-kid/config-exporter/A2.Field(Config).Type(Configuration).Tag(prefix:'Demo').TagActualValue(Demo).Required()
@@ -421,10 +418,9 @@ Merge:
         - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
         - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
     B2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(B2).Type(Configuration).Tag(value:'${Merge.B2}').TagActualValue(false).Required()
-    M:
-        string@Sources:
-            - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
-            - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+    M@Sources:
+        - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
+        - github.com/go-kid/config-exporter/A2.Field(MergeConfig).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
     M2@Sources: github.com/go-kid/config-exporter/A.Embed(MergeParent).Field(M2).Type(Configuration).Tag(value:'${Merge.M2:map[foo:bar]}').TagActualValue({"foo":"bar"}).Required()
     S@Sources:
         - github.com/go-kid/config-exporter/A.Field(Merge).Type(Configuration).Tag(prefix:'Merge').TagActualValue(Merge).Mapper(yaml).Required()
@@ -470,7 +466,7 @@ app:
 			app.AddConfigLoader(loader.NewRawLoader(defaultConfig)),
 		)
 		assert.NoError(t, err)
-		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationArgs | OnlyNew).Expand())
+		bytes, err := yaml.Marshal(exporter.GetConfig(AnnotationArgs | OnlyNew))
 		assert.NoError(t, err)
 		var exampleConfig = []byte(`Demo@Args:
     Required: true

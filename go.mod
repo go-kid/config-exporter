@@ -3,8 +3,8 @@ module github.com/go-kid/config-exporter
 go 1.22.1
 
 require (
-	github.com/go-kid/ioc v1.5.18
-	github.com/go-kid/properties v0.0.3
+	github.com/go-kid/ioc v1.5.21
+	github.com/go-kid/properties v0.0.4
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
@@ -16,6 +16,8 @@ require (
 	github.com/expr-lang/expr v1.16.3 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
+	github.com/go-kid/strconv2 v0.0.2 // indirect
+	github.com/go-kid/strings2 v0.0.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.19.0 // indirect

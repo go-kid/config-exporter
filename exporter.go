@@ -1,7 +1,6 @@
 package config_exporter
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-kid/ioc/app"
 	"github.com/go-kid/ioc/component_definition"
@@ -99,13 +98,13 @@ func invokeHandler(property *component_definition.Property, p string, a any, f I
 	}
 	switch t.Kind() {
 	case reflect.Struct:
-		for prefix, value := range convertToProperties(mapper, p, a) {
-			f(property, prefix, value)
+		for _, set := range convertToProperties(mapper, a) {
+			f(property, p+"."+set.Key, set.Value)
 		}
 	case reflect.Pointer:
 		if eleKind := t.Elem().Kind(); eleKind == reflect.Struct {
-			for prefix, value := range convertToProperties(mapper, p, a) {
-				f(property, prefix, value)
+			for _, set := range convertToProperties(mapper, a) {
+				f(property, p+"."+set.Key, set.Value)
 			}
 			return
 		}
@@ -148,45 +147,20 @@ func (d *postProcessor) GetConfig(mode mode.Mode) properties.Properties {
 				return
 			}
 		}
-		//if reflect.TypeOf(value).Kind() == reflect.Map {
-		//	err := flatSetMap(pm, prefix, value)
-		//	if err != nil {
-		//		syslog.Errorf("flat set map value %+v error: %v", value, err)
-		//	}
-		//	return
-		//}
 		pm.Set(prefix, value)
 	})
 	return pm
 }
 
-func flatSetMap(pm properties.Properties, prefix string, value any) error {
-	bytes, err := json.Marshal(value)
-	if err != nil {
-		return err
-	}
-	var rawMap = make(map[string]any)
-	err = json.Unmarshal(bytes, &rawMap)
-	if err != nil {
-		return err
-	}
-	for s, a := range properties.NewFromMap(rawMap) {
-		pm.Set(prefix+"."+s, a)
-	}
-	return nil
-}
-
-func convertToProperties(mapper string, prefix string, value any) properties.Properties {
+func convertToProperties(mapper string, value any) []*properties.ValueSet {
 	subRaw, err := toMap(value, mapper)
 	if err != nil {
 		syslog.Warnf("deep set properties err: %v", err)
 		return nil
 	}
-	result := properties.New()
-	for subP, subValue := range properties.NewFromMap(subRaw) {
-		result.Set(prefix+"."+subP, subValue)
-	}
-	return result
+	pm, _ := properties.NewFromAny(subRaw)
+	sets := pm.ValueSets()
+	return sets
 }
 
 func toMap(a any, mapper string) (map[string]any, error) {
