@@ -5,9 +5,9 @@ import (
 	"github.com/go-kid/ioc/app"
 	"github.com/go-kid/ioc/component_definition"
 	"github.com/go-kid/ioc/configure"
+	"github.com/go-kid/ioc/container"
+	"github.com/go-kid/ioc/container/processors"
 	"github.com/go-kid/ioc/definition"
-	"github.com/go-kid/ioc/factory"
-	"github.com/go-kid/ioc/factory/processors"
 	"github.com/go-kid/ioc/syslog"
 	"github.com/go-kid/ioc/util/mode"
 	"github.com/go-kid/ioc/util/reflectx"
@@ -25,7 +25,7 @@ type postProcessor struct {
 	propertyOriginArgs map[string]component_definition.TagArg
 }
 
-func (d *postProcessor) PostProcessComponentFactory(factory factory.Factory) error {
+func (d *postProcessor) PostProcessComponentFactory(factory container.Factory) error {
 	d.configure = factory.GetConfigure()
 	return nil
 }
