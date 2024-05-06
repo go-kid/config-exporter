@@ -3,8 +3,8 @@ module github.com/go-kid/config-exporter
 go 1.22.1
 
 require (
-	github.com/go-kid/ioc v1.5.24
-	github.com/go-kid/properties v0.0.4
+	github.com/go-kid/ioc v1.5.25
+	github.com/go-kid/properties v0.0.5
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
